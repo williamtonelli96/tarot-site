@@ -5,6 +5,8 @@
   const TIME_SCALE = 1;
   const PERSPECTIVE = 1000;   // px: prospettiva della rotazione 3D della carta
   const ROT_SIGN = -1;        // -1 = antiorario (convenzione Figma), 1 = orario
+  const CARTA_ZOOM = 3;     // ingrandimento finale della carta rispetto a Figma (1 = originale)
+  const CARTA_GAP = 0.1;     // distanza carta-paragrafo, in frazione dell'altezza dello schermo
 
   const $ = id => document.getElementById(id);
   const el = (cls, parent, css) => { const d = document.createElement('div'); d.className = cls; if (css) Object.assign(d.style, css); parent && parent.appendChild(d); return d; };
@@ -20,19 +22,16 @@
   const BACK = 'assets/card-back.webp', FACE = 'assets/card-face.webp';
 
   // --- anello di 22 carte (ripetizione radiale) ---
-  const ring = $('ring'), R = D.ring, [cx, cy, cw, ch] = R.card;
+  const ring = $('ring'), R = D.ring, [cx, cy, cw, ch] = R.card, ringCards = [];
   for (let i = 0; i < R.count; i++) {
     const c = el('ring-card', ring, { left: cx + 'px', top: cy + 'px', width: cw + 'px', height: ch + 'px',
       transformOrigin: (R.box[2] / 2 - cx) + 'px ' + (R.box[2] / 2 - cy) + 'px', transform: `rotate(${360 / R.count * i}deg)` });
     face(c, BACK, R.top[0], R.top[1], ch, D.crop.back);
+    ringCards.push(c);
   }
 
-  // --- ventaglio: 6 carte + carta scelta ---
-  const fan = $('fan'), F = D.fan, cards = [];
-  D.cards.forEach((m, i) => {
-    const c = el('card', fan); c.dataset.base = `matrix(${m.join(',')})`;
-    face(c, BACK, F.top[0], F.top[1], F.size[1], D.crop.back); cards.push(c);
-  });
+  // --- carta scelta: prende il posto della prima carta dell'anello (ringCards[0]) ---
+  const fan = $('fan'), F = D.fan;
   const carta = el('carta', fan, { left: D.carta.at[0] + 'px', top: D.carta.at[1] + 'px' });
   const body = el('carta-body', carta, { borderRadius: D.radius + 'px' });
   face(body, FACE, 0, F.size[0], F.size[1], D.crop.face);
@@ -59,24 +58,24 @@
   }
   const g = (id, t, def) => sample(TR[id], t, def);
 
+  const SMAX = TR['carta.s'][TR['carta.s'].length - 1][1][0];   // scala finale in Figma
   const wheel = $('wheel');
-  let fy = 1, ff = 1, fc = 1, lastT = 0;
+  let fy = 1, fr = 1, cs = 1, cTarget = 0, cExit = 0, lastT = 0;
   function render(t) {
     lastT = t;
-    for (const [node, p] of [[wheel, 'wheel'], [ring, 'ring']]) {
+    for (const [node, p, f] of [[wheel, 'wheel', fy], [ring, 'ring', fr]]) {
       const s = g(p + '.s', t, [1, 1]), tr = g(p + '.t', t, [0, 0]), r = g(p + '.r', t, 0);
-      node.style.transform = `translate(${tr[0]}px,${tr[1] * fy}px) rotate(${ROT_SIGN * r}rad) scale(${s[0]},${s[1]})`;
+      node.style.transform = `translate(${tr[0]}px,${tr[1] * f}px) rotate(${ROT_SIGN * r}rad) scale(${s[0]},${s[1]})`;
     }
-    ring.style.opacity = g('ring.o', t, 100) / 100;
-    cards.forEach((c, i) => {
-      const tr = g(`fan${i}.t`, t, [0, 0]);
-      c.style.transform = `translate(${tr[0]}px,${tr[1] * ff}px) ${c.dataset.base}`;
-      c.style.opacity = g(`fan${i}.o`, t, 100) / 100;
-    });
+    // le altre 21 carte restano nell'anello e cadono con la ruota; solo la prima si "stacca"
+    ringCards[0].style.opacity = g('ring.o', t, 100) / 100;
     const tr = g('carta.t', t, [0, 0]), s = g('carta.s', t, [1, 1]), ry = g('carta.ry', t, 0);
-    carta.style.transform = `translate(${tr[0]}px,${tr[1] > 0 ? tr[1] * fc : tr[1]}px)`;
+    // posizione verticale rimappata: partenza (come Figma) -> posizione finale calcolata -> uscita sotto lo schermo
+    const kt = TR['carta.t'], y0 = kt[0][1][1], y1 = kt[1][1][1], y3 = kt[3][1][1], y4 = kt[4][1][1];
+    const ty = t < kt[3][0] ? y0 + (tr[1] - y0) / (y1 - y0) * (cTarget - y0) : cTarget + (tr[1] - y3) / (y4 - y3) * (cExit - cTarget);
+    carta.style.transform = `translate(${tr[0]}px,${ty}px)`;
     carta.style.opacity = g('carta.o', t, 100) / 100;
-    body.style.transform = `perspective(${PERSPECTIVE}px) rotateY(${ry}rad) scale(${s[0]},${s[1]})`;
+    body.style.transform = `perspective(${PERSPECTIVE}px) rotateY(${ry}rad) scale(${1 + (s[0] - 1) * (cs - 1) / (SMAX - 1)})`;
     back.style.opacity = g('carta.bo', t, 100) / 100;
     const c = g('carta.sc', t, [0, 0, 0, 0]);
     body.style.boxShadow = `0 ${D.carta.shadowOffsetY}px ${g('carta.sr', t, 0)}px rgba(${c.slice(0, 3).map(v => Math.round(v * 255))},${c[3]})`;
@@ -98,18 +97,25 @@
   $('hit').addEventListener('click', play);
 
   // --- responsive: testi scalati sul frame 393×852; ruota intera, sempre visibile, ancorata in basso ---
-  const text = $('text'), asm = $('asm');
+  const text = $('text'), asm = $('asm'), fade = $('fade');
   function fit() {
     const vw = innerWidth, vh = innerHeight;
     const st = Math.min(vw / D.frame[0], vh / D.frame[1]);
     text.style.transform = `translateX(-50%) scale(${st})`;
     text.style.top = 105 * st + 'px';
-    const dia = Math.min(vw * 0.94, vh * 0.48), a = dia / D.wheel.size, m = Math.max(8, vw * 0.02);
-    asm.style.transform = `translate(${vw / 2}px,${vh - m - dia / 2}px) scale(${a})`;
-    // spostamenti verticali aumentati quanto basta perché ruota e carte escano dallo schermo
+    // sfumatura sul bordo inferiore: ruota ferma sopra, tutto ciò che cade ci svanisce dentro
+    const m = Math.min(Math.max(vh * 0.1, 48), 120);
+    fade.style.height = m + 'px';
+    const dia = Math.min(vw * 0.94, vh * 0.46), a = dia / D.wheel.size, cy = vh - m - dia / 2;
+    asm.style.transform = `translate(${vw / 2}px,${cy}px) scale(${a})`;
     fy = Math.max(1, (D.wheel.size + m / a + 30) / 419.8);
-    ff = Math.max(1, (640 + m / a + 20) / 417);
-    fc = Math.max(1, (667 + m / a + 30) / 508.9);
+    fr = Math.max(1, (640 + m / a + 20) / 424.55);
+    // carta: più grande e più lontana dal paragrafo
+    cs = Math.min(SMAX * CARTA_ZOOM, 0.6 * vw / (F.size[0] * a), 0.55 * vh / (F.size[1] * a));
+    const half = F.size[1] / 2 * cs * a, rel = F.at[1] + D.carta.at[1] + F.size[1] / 2 - (D.wheel.at[1] + D.wheel.size / 2);
+    const yc = (105 + 66 + 17) * st + CARTA_GAP * vh + half;
+    cTarget = (yc - cy) / a - rel;
+    cExit = (vh + half + 40 - cy) / a - rel;
     render(lastT);
   }
   addEventListener('resize', fit); fit();

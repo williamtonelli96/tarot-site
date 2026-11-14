@@ -20,4 +20,3 @@ Per provarlo in locale basta aprire `index.html` (oppure `python3 -m http.server
 - `TIME_SCALE`: velocità complessiva (Figma salva i tempi in mezzi-microsecondi, quindi `data.js` li ha già dimezzati).
 - `PERSPECTIVE`: profondità del flip 3D della carta.
 - `ROT_SIGN`: verso di rotazione della ruota (-1 antiorario, 1 orario).
-# tarot-site

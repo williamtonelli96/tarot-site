@@ -19,3 +19,4 @@ body{display:flex;align-items:center;justify-content:center;background:#e2e2e2;o
 button{border:0;background:transparent;cursor:pointer;outline-offset:4px}
 #wheel{left:-38px;top:574px;width:473px;height:473px;border-radius:50%;background:url(assets/wheel.svg) center/100% 100% no-repeat;transform-origin:50% 50%;will-change:transform}
 #hit{left:-109px;top:439.7px;width:614px;height:234.3px}
+#fade{position:absolute;left:0;right:0;bottom:0;pointer-events:none;background:linear-gradient(to top,#e2e2e2 0%,#e2e2e2 30%,rgba(226,226,226,0) 100%)}
