@@ -1,11 +1,28 @@
 @font-face{font-family:"Fondamento";src:url(fonts/fondamento-latin-400-normal.woff2) format("woff2");font-display:swap}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{display:flex;align-items:center;justify-content:center;background:#e2e2e2;overflow:hidden;overflow:clip;font-family:"Fondamento",cursive;color:#000;-webkit-tap-highlight-color:transparent}
-#frame{position:fixed;inset:0;overflow:hidden;overflow:clip;background:#e2e2e2}
-#text{position:absolute;left:50%;top:0;width:393px;transform-origin:50% 0}
+body{display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#e2e2e2
+    ;overflow:hidden;
+    overflow:clip;
+    font-family:"Fondamento",cursive;
+    color:#000;
+    -webkit-tap-highlight-color:transparent}
+#frame{position:fixed;
+    inset:0;
+    overflow:hidden;
+    overflow:clip;
+    background:#e2e2e2}
+#text{position:absolute;
+    left:50%;
+    top:0;
+    width:393px;
+    transform-origin:50% 0}
 #title{font:400 48px/66px "Fondamento",cursive;text-align:center;white-space:nowrap}
-#hint{margin-top:0;font:400 12px/17px "Fondamento",cursive;text-align:center;white-space:nowrap}
+#hint{margin-top:0;
+    font:400 17px/22px "Fondamento",cursive;text-align:center;white-space:nowrap}
 #asm{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0}
 #world{position:absolute;left:0;top:0;width:0;height:0;transform:translate(-198.5px,-810.5px)}
 #world>*{position:absolute}
