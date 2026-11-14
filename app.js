@@ -3,7 +3,7 @@
   // Figma salva i tempi in mezzi-microsecondi: data.js è già in secondi "dimezzati".
   // Se nel prototipo Figma la durata ti sembra la metà/il doppio, cambia TIME_SCALE (0.5 = più lento, 2 = più veloce).
   const TIME_SCALE = 1;
-  const PERSPECTIVE = 2000;   // px: prospettiva della rotazione 3D della carta
+  const PERSPECTIVE = 1000;   // px: prospettiva della rotazione 3D della carta
   const ROT_SIGN = -1;        // -1 = antiorario (convenzione Figma), 1 = orario
 
   const $ = id => document.getElementById(id);
@@ -60,21 +60,23 @@
   const g = (id, t, def) => sample(TR[id], t, def);
 
   const wheel = $('wheel');
+  let fy = 1, ff = 1, fc = 1, lastT = 0;
   function render(t) {
+    lastT = t;
     for (const [node, p] of [[wheel, 'wheel'], [ring, 'ring']]) {
       const s = g(p + '.s', t, [1, 1]), tr = g(p + '.t', t, [0, 0]), r = g(p + '.r', t, 0);
-      node.style.transform = `translate(${tr[0]}px,${tr[1]}px) rotate(${ROT_SIGN * r}rad) scale(${s[0]},${s[1]})`;
+      node.style.transform = `translate(${tr[0]}px,${tr[1] * fy}px) rotate(${ROT_SIGN * r}rad) scale(${s[0]},${s[1]})`;
     }
     ring.style.opacity = g('ring.o', t, 100) / 100;
     cards.forEach((c, i) => {
       const tr = g(`fan${i}.t`, t, [0, 0]);
-      c.style.transform = `translate(${tr[0]}px,${tr[1]}px) ${c.dataset.base}`;
+      c.style.transform = `translate(${tr[0]}px,${tr[1] * ff}px) ${c.dataset.base}`;
       c.style.opacity = g(`fan${i}.o`, t, 100) / 100;
     });
     const tr = g('carta.t', t, [0, 0]), s = g('carta.s', t, [1, 1]), ry = g('carta.ry', t, 0);
-    carta.style.transform = `translate(${tr[0]}px,${tr[1]}px)`;
+    carta.style.transform = `translate(${tr[0]}px,${tr[1] > 0 ? tr[1] * fc : tr[1]}px)`;
     carta.style.opacity = g('carta.o', t, 100) / 100;
-    body.style.transform = `perspective(${PERSPECTIVE}px) rotateX(${D.carta.rotX}rad) rotateY(${ry}rad) translateZ(${D.carta.tz}px) scale(${s[0]},${s[1]})`;
+    body.style.transform = `perspective(${PERSPECTIVE}px) rotateY(${ry}rad) scale(${s[0]},${s[1]})`;
     back.style.opacity = g('carta.bo', t, 100) / 100;
     const c = g('carta.sc', t, [0, 0, 0, 0]);
     body.style.boxShadow = `0 ${D.carta.shadowOffsetY}px ${g('carta.sr', t, 0)}px rgba(${c.slice(0, 3).map(v => Math.round(v * 255))},${c[3]})`;
@@ -95,12 +97,20 @@
   wheel.addEventListener('click', play);
   $('hit').addEventListener('click', play);
 
-  // --- responsive: il frame 393×852 viene scalato per stare nello schermo ---
-  const frame = $('frame'), stage = $('stage');
+  // --- responsive: testi scalati sul frame 393×852; ruota intera, sempre visibile, ancorata in basso ---
+  const text = $('text'), asm = $('asm');
   function fit() {
-    const s = Math.min(innerWidth / D.frame[0], innerHeight / D.frame[1]);
-    frame.style.width = D.frame[0] * s + 'px'; frame.style.height = D.frame[1] * s + 'px';
-    stage.style.transform = `scale(${s})`;
+    const vw = innerWidth, vh = innerHeight;
+    const st = Math.min(vw / D.frame[0], vh / D.frame[1]);
+    text.style.transform = `translateX(-50%) scale(${st})`;
+    text.style.top = 105 * st + 'px';
+    const dia = Math.min(vw * 0.94, vh * 0.48), a = dia / D.wheel.size, m = Math.max(8, vw * 0.02);
+    asm.style.transform = `translate(${vw / 2}px,${vh - m - dia / 2}px) scale(${a})`;
+    // spostamenti verticali aumentati quanto basta perché ruota e carte escano dallo schermo
+    fy = Math.max(1, (D.wheel.size + m / a + 30) / 419.8);
+    ff = Math.max(1, (640 + m / a + 20) / 417);
+    fc = Math.max(1, (667 + m / a + 30) / 508.9);
+    render(lastT);
   }
-  addEventListener('resize', fit); fit(); render(0);
+  addEventListener('resize', fit); fit();
 })();

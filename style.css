@@ -1,35 +1,21 @@
 @font-face{font-family:"Fondamento";src:url(fonts/fondamento-latin-400-normal.woff2) format("woff2");font-display:swap}
-
 *{box-sizing:border-box;margin:0;padding:0}
-
-html,body{height:100vh; width: 100vw;}
-
-body{display:flex;align-items:center;justify-content:center;background:#e2e2e2;overflow:hidden;overflow: visible;font-family:"Fondamento",cursive;color:#000;-webkit-tap-highlight-color:transparent}
-
-@media (min-width:700px){body{background:#f5f5f5}#frame{box-shadow:0 0 0 1px rgba(0,0,0,.08)}}
-@media (min-width:1080px){body{background:#f5f5f5}#frame{box-shadow:0 0 0 1px rgba(0,0,0,.08)}}
-
-#frame{position:relative;overflow:clip;background:#e2e2e2;flex:none}
-
-#stage{position:absolute;left:0;top:0;width:393vw;height:852px;transform-origin:0 0}
-
-#stage>*{position:absolute}
-
-#title{left:72px;top:105px;width:251px;font:400 48px/66px "Fondamento",cursive;text-align:center;white-space:nowrap}
-
-#hint{left:96px;top:171px;font:400 12px/17px "Fondamento",cursive;white-space:nowrap}
-
+html,body{height:100%}
+body{display:flex;align-items:center;justify-content:center;background:#e2e2e2;overflow:hidden;overflow:clip;font-family:"Fondamento",cursive;color:#000;-webkit-tap-highlight-color:transparent}
+#frame{position:fixed;inset:0;overflow:hidden;overflow:clip;background:#e2e2e2}
+#text{position:absolute;left:50%;top:0;width:393px;transform-origin:50% 0}
+#title{font:400 48px/66px "Fondamento",cursive;text-align:center;white-space:nowrap}
+#hint{margin-top:0;font:400 12px/17px "Fondamento",cursive;text-align:center;white-space:nowrap}
+#asm{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0}
+#world{position:absolute;left:0;top:0;width:0;height:0;transform:translate(-198.5px,-810.5px)}
+#world>*{position:absolute}
 #ring{left:-181px;top:432px;width:758px;height:758px;will-change:transform,opacity}
-
 #fan{left:-109px;top:439.7px;width:0;height:0}
 .card,.carta{position:absolute;left:0;top:0;width:71.1px;height:127.2px;transform-origin:0 0;will-change:transform,opacity}
 .face{position:absolute;overflow:hidden;border-radius:11px}
 .face img{position:absolute;max-width:none;display:block;pointer-events:none;user-select:none}
 .carta-body{position:absolute;inset:0;transform-origin:50% 50%;will-change:transform}
 .ring-card{position:absolute}
-
 button{border:0;background:transparent;cursor:pointer;outline-offset:4px}
-
 #wheel{left:-38px;top:574px;width:473px;height:473px;border-radius:50%;background:url(assets/wheel.svg) center/100% 100% no-repeat;transform-origin:50% 50%;will-change:transform}
-
 #hit{left:-109px;top:439.7px;width:614px;height:234.3px}
